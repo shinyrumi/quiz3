@@ -1,1 +1,210 @@
-sdsd
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-DEAL 정보 분석 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Modern Green & White -->
+    <!-- Application Structure Plan: A linear, multi-screen quiz format. The user progresses from an introduction screen through three distinct question screens, culminating in a final success screen. This step-by-step structure provides a clear, guided user flow, making the quiz experience more interactive and engaging than a static document. -->
+    <!-- Visualization & Content Choices:
+    - Puzzle 1 (Year): Goal: Test factual recall. Method: Styled text block. Interaction: Number input, JS validation. Justification: Direct and clear for a numerical question.
+    - Puzzle 2 (Name): Goal: Test factual recall. Method: Styled text block. Interaction: Text input, JS validation. Justification: Standard for a name-based question.
+    - Puzzle 3 (Fill-in-the-blank): Goal: Test comprehension of the vision statement. Method: Styled text block with a blank. Interaction: Text input, JS validation. Justification: Focuses user on the key term in the vision.
+    - Final Screen: Goal: Acknowledge completion. Method: Display a success message. Interaction: Restart button. Justification: Provides a clear conclusion and allows for re-engagement.
+    - Library/Method: Vanilla JavaScript for all logic. Tailwind CSS for styling. NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #e6ffe6; /* Light green background */
+        }
+        .card {
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-primary {
+            background-color: #34a853; /* Google Green */
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-primary:hover {
+            background-color: #2c9749;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+        .input-field {
+            border: 2px solid #d1d5db;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-field:focus {
+            border-color: #4285f4; /* Google Blue */
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+            outline: none;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: flex;
+        }
+        .feedback {
+            min-height: 24px;
+            transition: opacity 0.3s;
+        }
+        .google-like-logo span {
+            font-weight: 700;
+        }
+        .google-like-logo .blue { color: #4285f4; }
+        .google-like-logo .red { color: #ea4335; }
+        .google-like-logo .yellow { color: #fbbc05; }
+        .google-like-logo .green { color: #34a853; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <main id="app-container" class="w-full max-w-2xl mx-auto">
+
+        <!-- Intro Screen -->
+        <div id="intro-screen" class="screen active flex-col items-center text-center">
+            <div class="card p-8 md:p-12 rounded-lg w-full">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 google-like-logo">
+                    <span class="green">G</span>-DEAL <span class="blue">정</span>보 <span class="yellow">분</span>석 <span class="red">퀴</span>즈
+                </h1>
+                <p class="text-gray-600 mb-8">G-DEAL(경상 디지털 교육자 연합)에 대해 얼마나 알고 계신가요? <br> G-DEAL의 연혁과 비전에 대한 퀴즈를 통해 지식을 확인해 보세요.</p>
+                <button id="start-btn" class="btn-primary font-bold py-3 px-8 rounded-lg text-lg">퀴즈 시작</button>
+            </div>
+        </div>
+
+        <!-- Puzzle Screens Container -->
+        <div id="puzzle-container"></div>
+
+        <!-- Success Screen -->
+        <div id="success-screen" class="screen flex-col items-center text-center">
+            <div class="card p-8 md:p-12 rounded-lg w-full">
+                <h1 class="text-4xl font-bold text-green-600 mb-4">🎉 정답입니다! 🎉</h1>
+                <p class="text-gray-700 text-lg mb-8">모든 문제를 맞히셨습니다! G-DEAL에 대한 당신의 깊은 관심과 지식에 감사드립니다.</p>
+                <button id="restart-btn" class="btn-primary font-bold py-3 px-8 rounded-lg">다시 풀기</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const puzzles = [
+            {
+                type: 'number',
+                question: "G-DEAL의 전신인 GEG경남 창립부터 현재까지, <strong>3대 리더가 임명된 해</strong>는 언제인가요?",
+                answer: 2023,
+                explanation: "3대 리더는 2023년에 임명되었습니다."
+            },
+            {
+                type: 'text',
+                question: "<strong>경남 GEG 2대 리더의 이름</strong>은 무엇인가요?",
+                answer: "문지훈",
+                explanation: "2대 리더의 이름은 문지훈입니다."
+            },
+            {
+                type: 'text',
+                question: "아래 빈칸을 채워 G-DEAL의 목표를 완성하세요.<br><br> <blockquote class='p-4 bg-gray-100 border-l-4 border-gray-300 text-gray-600'>G-DEAL은 디지털 전환 교육의 활성화를 통한 <strong>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</strong> 교육 경쟁력 제고라는 뚜렷한 목표의식을 바탕으로 결성된... 네트워크입니다.</blockquote>",
+                answer: "지역사회",
+                explanation: "G-DEAL의 목표는 '지역사회' 교육 경쟁력 제고입니다."
+            }
+        ];
+
+        let currentPuzzleIndex = 0;
+
+        const screens = {
+            intro: document.getElementById('intro-screen'),
+            puzzles: document.getElementById('puzzle-container'),
+            success: document.getElementById('success-screen')
+        };
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            if (screenName === 'puzzles') {
+                screens.puzzles.style.display = 'block';
+                screens.puzzles.innerHTML = '';
+                renderPuzzle(currentPuzzleIndex);
+            } else {
+                screens.puzzles.style.display = 'none';
+                screens[screenName].classList.add('active');
+            }
+        }
+
+        function renderPuzzle(index) {
+            const puzzle = puzzles[index];
+            const puzzleHTML = `
+                <div class="screen active flex-col items-center text-center">
+                    <div class="card p-8 md:p-12 rounded-lg w-full">
+                        <p class="text-sm font-bold text-green-600 mb-2">문제 ${index + 1} / ${puzzles.length}</p>
+                        <h2 class="text-xl md:text-2xl font-medium text-gray-800 mb-8">${puzzle.question}</h2>
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <input type="${puzzle.type}" id="puzzle-input-${index}" class="input-field w-full sm:w-64 text-center text-xl p-3 rounded-lg" placeholder="정답을 입력하세요">
+                            <button id="puzzle-submit-btn-${index}" class="btn-primary font-bold py-3 px-8 rounded-lg w-full sm:w-auto">제출</button>
+                        </div>
+                        <p id="puzzle-feedback-${index}" class="feedback mt-4 font-semibold"></p>
+                    </div>
+                </div>
+            `;
+            screens.puzzles.innerHTML = puzzleHTML;
+            document.getElementById(`puzzle-submit-btn-${index}`).addEventListener('click', () => checkAnswer(index));
+            document.getElementById(`puzzle-input-${index}`).addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    checkAnswer(index);
+                }
+            });
+        }
+
+        function checkAnswer(index) {
+            const input = document.getElementById(`puzzle-input-${index}`);
+            const feedback = document.getElementById(`puzzle-feedback-${index}`);
+            
+            let userAnswer;
+            if (puzzles[index].type === 'number') {
+                userAnswer = parseInt(input.value, 10);
+            } else {
+                userAnswer = input.value.trim();
+            }
+
+            const correctAnswer = puzzles[index].answer;
+
+            if (userAnswer === correctAnswer) {
+                feedback.textContent = `정답입니다! ${puzzles[index].explanation}`;
+                feedback.classList.remove('text-red-600');
+                feedback.classList.add('text-green-600');
+                input.disabled = true;
+                document.getElementById(`puzzle-submit-btn-${index}`).disabled = true;
+
+                setTimeout(() => {
+                    currentPuzzleIndex++;
+                    if (currentPuzzleIndex < puzzles.length) {
+                        renderPuzzle(currentPuzzleIndex);
+                    } else {
+                        showScreen('success');
+                    }
+                }, 2000);
+            } else {
+                feedback.textContent = "정답이 아닙니다. 다시 확인해 주세요.";
+                feedback.classList.add('text-red-600');
+                feedback.classList.remove('text-green-600');
+                input.value = '';
+            }
+        }
+
+        function resetGame() {
+            currentPuzzleIndex = 0;
+            showScreen('intro');
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => showScreen('puzzles'));
+        document.getElementById('restart-btn').addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
